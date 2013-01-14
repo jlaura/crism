@@ -33,3 +33,12 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+#My Ignores
+.DS_Store
+*.lbl
+*.tif
+*.IMG
+*.tab
+*.fmt
+*.png
