@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+#TODO - We need to check waht type of image we have (IR, VNIR, Other)
+#TODO - Atmospheric parameters (http://pds.nasa.gov/ds-view/pds/viewProfile.jsp?dsid=MRO-M-CRISM-3-RDR-TARGETED-V1.0)
+#TODO - Get non-implemented coded
+
+
 #Internal imports
 import sys
 import argparse
@@ -142,7 +147,6 @@ def scale(array, scalemin, scalemax):
     '''
     arraymin = array.mean() - 4 * array.std()
     arraymax = array.mean() + 4 * array.std()
-    print array.mean(), array.max(), array.min(), array.std()
     array = (((scalemax - scalemin)*(array-arraymin)) / (arraymax-arraymin)) + scalemin
     return array
 
@@ -153,7 +157,6 @@ def linear(array,scalemin,scalemax):
     scalemax = array.mean() + (2* array.std())
     scalemin = array.mean() - (2* array.std())
     array = (array - array.min()) * ((scalemax - scalemin)/ (array.max()-array.min())) + scalemin 
-    print array.mean(), array.max(), array.min(), array.std()
     return array
 
 def parseargs():
@@ -185,16 +188,45 @@ def parseargs():
     
     surfacegroup.add_argument('--rockdust1','--R770', action='store_true', dest='rockdust1', default=False, help='Parameter: 0.77micron band, Rationale: rock/dust.')
     surfacegroup.add_argument('--rockdust2','--RBR', action='store_true', dest='rockdust2', default=False, help='Parameter: red/blue ratio, Rationale: rock.dust')
-    surfacegroup.add_argument('--IRAlbedo', '--IRA', action='store_true', dest='ira', default=False, help='Parameter: 1.3micron reflectance, Rationale: IR albedo.')
-    surfacegroup.add_argument('--OlIndex', '--olivine_index', action='store_true', dest='olivine_index', default=False, help='Parameter:Olivine Index, Rationale: Olivine will be strongly positive; based on fayalite.')
+    surfacegroup.add_argument('--BD530', action='store_true', dest='bd530', default=False, help='Parameter: 0.53 micron band depth')
+    surfacegroup.add_argument('--SH600', action='store_true', dest='sh600', default=False, help='Parameter: 0.60 micron shoulder height')    
+    surfacegroup.add_argument('--BD640', action='store_true', dest='bd640', default=False, help='Parameter: 0.64 micron band depth')     
+    surfacegroup.add_argument('--BD860', action='store_true', dest='bd860', default=False, help='Parameter: select ferric minerals')   
+    surfacegroup.add_argument('--BD920', action='store_true', dest='bd920', default=False, help='Parameter: select ferric minerals')  
+    surfacegroup.add_argument('--IRAlbedo', '--IRA', action='store_true', dest='ira', default=False, help='Parameter: 1.3micron reflectance, Rationale: IR albedo.') 
+    surfacegroup.add_argument('--OlIndex', '--olivine_index', action='store_true', dest='olivine_index', default=False, help='Parameter:Olivine Index, Rationale: Olivine will be strongly positive; based on fayalite.')    
+    surfacegroup.add_argument('--OlIndex2', '--olivine_index2', action='store_true', dest='olivine_index', default=False, help='Parameter:Olivine Index, Rationale: Olivine will be strongly positive; based on fayalite. TRDRv3 only.')  
     surfacegroup.add_argument('--LCP', '--lcp_index', action='store_true', dest='lcp_index', default=False, help='Parameter: pyroxene index, Rationale:pyroxene will be strongly positive; favors LCP')
-    surfacegroup.add_argument('--HCP', '--hcp_index', action='store_true', dest='hcp_index', default=False, help='Parameter: pyroxene index, Rationale: pyroxene will be strongly positive; favors HCP.')
+    surfacegroup.add_argument('--HCP', '--hcp_index', action='store_true', dest='hcp_index', default=False, help='Parameter: spectral variance.')
     surfacegroup.add_argument('--ISLOPE1', '--ferric1', action='store_true', dest='ferric_coating', default=False, help='Parameter: -1*Spectral Slope_1, Rationale: Ferric coating on dark rocks.')
-    surfacegroup.add_argument('--ICER1', '--h2o_co2_ice', action='store_true', dest='h2o_co2_ice', default=False, help='Parameter:1.5micron and 1.43micron band ratio,Rationale: CO2, H2O Ice Mixtures.')
-    surfacegroup.add_argument('--ICER2', '--h2o_co2_ice2', action='store_true', dest='h2o_co2_ice2', default=False, help='Parameter:guge 2.7micron band,Rationale: CO2 ice will be >> 1; H2O ice and soil will be ~ 1.')
-    surfacegroup.add_argument('--BD3000', '--h2o1', action='store_true', dest='h2o1', default=False, help='Parameter: 3micron band depth, Rationale: h2o.')
-    surfacegroup.add_argument('--CINDEX', '--carbonates', action='store_true', dest='carbonates', default=False, help='Parameter: gauge 3.9micron band, Rationale:Carbonates.')
-    return (parser.parse_args())
+    surfacegroup.add_argument('--BD1435', '--co2_surface_ice', action='store_true', dest='bd1435', default=False, help='Parameter: 1.435 micron band depth, Rationale: CO2 surface ice.') 
+    surfacegroup.add_argument('--BD1500', '--h20_surface_ice', action='store_true', dest='bd1500', default=False, help='Parameter: 1.5 micron band depth, Rationale: H2O surface ice.') 
+    surfacegroup.add_argument('--ICER1', '--h2o_co2_ice', action='store_true', dest='icer1', default=False, help='Parameter:1.5micron and 1.43micron band ratio,Rationale: CO2, H2O Ice Mixtures.')
+    surfacegroup.add_argument('--BD1750', '--gypsum', action='store_true', dest='bd1750', default=False, help='Parameter: 1.75 micron band depth, Rationale: Gypsum.') 
+    surfacegroup.add_argument('--BD1900',action='store_true', dest='bd1900', default=False, help='Parameter: 1.9 micron band depth, Rationale: H2O, chemically bound or absorbed.')
+    surfacegroup.add_argument('--BD2100',action='store_true', dest='bd2100', default=False, help='Parameter: 2.1 micron band depth, Rationale: monohydrated minerals.')   
+    surfacegroup.add_argument('--BD2210',action='store_true', dest='bd2210', default=False, help='Parameter: 2.21 micron band depth, Rationale: Al-OH minerals.') 
+    surfacegroup.add_argument('--BD2290',action='store_true', dest='bd2290', default=False, help='Parameter: 2.9 micron band depth, Rationale: Mg,Fe-OH minerals (at 2.3); also CO2 ice(at 2.292  microns).')     
+    surfacegroup.add_argument('--D2300',action='store_true', dest='d2300', default=False, help='Parameter: 2.3 micron drop, Rationale: hydrated minerals; particularly clays.') 
+    
+    surfacegroup.add_argument('--SINDEX',action='store_true', dest='sindex', default=False, help='Parameter: Convexity at 2.29 microns  due to absorptions at 1.9/2.1 microns and 2.4 microns, Rationale: hydrated minerals; particularly sulfates.')
+    surfacegroup.add_argument('--ICER2', action='store_true', dest='icer2', default=False, help='Parameter:gauge 2.7micron band,Rationale: CO2 ice will be >> 1; H2O ice and soil will be ~ 1.')    
+    surfacegroup.add_argument('--BDCARB', action='store_true', dest='bdcarb', default=False, help='Parameter:overtone band depth,Rationale: carbonate overtones.')    
+    surfacegroup.add_argument('--BD3000', action='store_true', dest='bd3000', default=False, help='Parameter:3 micron band depth,Rationale: H2O, chemically bound or adsorbed.') 
+    surfacegroup.add_argument('--BD3100', action='store_true', dest='bd3100', default=False, help='Parameter:3.1 micron band depth,Rationale: H2Oice.')
+    surfacegroup.add_argument('--BD3200', action='store_true', dest='bd3200', default=False, help='Parameter:3.2 micron band depth,Rationale: CO2ice.')
+    surfacegroup.add_argument('--BD3400', action='store_true', dest='bd3400', default=False, help='Parameter:3.4 micron band depth,Rationale: Carbonates;organics.')
+    surfacegroup.add_argument('--CINDEX', action='store_true', dest='cindex', default=False, help='Parameter:gauge 3.9 micron band,Rationale: carbonates.')
+ 
+    #The following will raise not implemented errors.
+    surfacegroup.add_argument('--VAR', '--spectral_variance', action='store_true', dest='var', default=False, help='Parameter: pyroxene index, Rationale: pyroxene will be strongly positive; favors HCP.')
+    surfacegroup.add_argument('--BDI1000VIS', action='store_true', dest='bdi1000VIS', default=False, help='Parameter: 1 micron integrated band depth; VIS wavelengths')
+    surfacegroup.add_argument('--BDI1000IR', action='store_true', dest='bdi1000IR', default=False, help='Parameter: 1 micron integrated band depth; IR wavelengths')
+    surfacegroup.add_argument('--RPeak1', action='store_true', dest='rpeak1', default=False, help='Parameter: reflectance peak 1')
+    surfacegroup.add_argument('--BDI2000', action='store_true', dest='bdi2000', default=False, help='Parameter: 2 micron integrated band depth, Rationale: pyroxene abundance and particle size')
+
+    return (parser.parse_args()) 
+
     
 
 def main():
@@ -237,7 +269,6 @@ def main():
         #Attempt to parse the wv.tab file that is shipped with an MRDR
         wavelength_lookup = args.input_data.replace('mrrif', 'mrrwv').split('.')
         wavelengths = wv2band(wavelength_lookup[0]+'.tab')
-    print wavelengths
     #Start parsing the args
     if args.rockdust1 == True:
         array_out = algorithms.rockdust1(raster, wavelengths)
@@ -250,19 +281,47 @@ def main():
         
         if args.outputname == None:
             name = 'R770divR440.tif'
-        
+            
+    if args.bd530 == True:
+        array_out = algorithms.bd530(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD530.tif'
+                    
+    if args.sh600 == True:
+        array_out = algorithms.sh600(raster, wavelengths)
+        if args.outputname == None:
+            name = 'SH600.tif'
+            
+    if args.bd640 == True:
+        array_out = algorithms.bd640(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD640.tif'               
+
+    if args.bd860 == True:
+        array_out = algorithms.bd860(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD860.tif' 
+
+    if args.bd920 == True:
+        array_out = algorithms.bd920(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD920.tif' 
+    
     if args.ira == True:
         array_out = algorithms.ira(raster, wavelengths)
-        
         if args.outputname == None:
             name='IRAlbedo.tif'
-    
+            
     if args.olivine_index == True:
         array_out = algorithms.olivine_index(raster, wavelengths)
-        
         if args.outputname == None:
             name = 'OlivineIndex.tif'
-        
+
+    if args.olivine_index2 == True:
+        array_out = algorithms.olivine_index2(raster, wavelengths)
+        if args.outputname == None:
+            name = 'OlivineIndex2.tif'
+            
     if args.lcp_index == True:
         array_out = algorithms.hcp_index(raster, wavelengths)
         if args.outputname == None:
@@ -272,33 +331,122 @@ def main():
         array_out = algorithms.hcp_index(raster, wavelengths)
         if args.outputname == None:
             name = 'HCPIndex.tif'
-            
-    if args.ferric_coating == True:
-        array_out = algorithms.ferric_coating(raster, wavelengths)
-        if args.outputname == None:
-            name = 'FerricCoating.tif'
-            
-    if args.h2o_co2_ice == True:
-        array_out = algorithms.h2o_co2_ice(raster, wavelengths)
-        if args.outputname == None:
-            name = 'h2o_co2_ice.tif'
 
-    if args.h2o_co2_ice2 == True:
-        array_out = algorithms.h2o_co2_ice2(raster, wavelengths)
+    if args.var == True:
+        array_out = algorithms.var(raster, wavelengths)
         if args.outputname == None:
-            name = 'h2o_co2_ice2.tif'
-            
-    if args.h2o1 == True:
-        array_out = algorithms.h2o1(raster, wavelengths)
+            name = 'SpectralVariance.tif'
+
+    if args.rpeak1 == True:
+        array_out = algorithms.rpeak1(raster, wavelengths)
         if args.outputname == None:
-            name = 'h2o1.tif'
-            
-    if args.carbonates == True:
-        array_out = algorithms.carbonates(raster, wavelengths)
+            name = 'RPeak1.tif'
+
+    if args.bdi1000VIS == True:
+        array_out = algorithms.bdi1000VIS(raster, wavelengths)
         if args.outputname == None:
-            name = 'Carbonates.tif'
+            name = 'BDI1000VIS.tif'        
+
+    if args.bdi1000IR == True:
+        array_out = algorithms.bdi1000IR(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BDI1000IR.tif' 
+
+    if args.islope1 == True:
+        array_out = algorithms.islope1(raster, wavelengths)
+        if args.outputname == None:
+            name = 'ISlope1.tif' 
+
+    if args.bd1425 == True:
+        array_out = algorithms.bd1435(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD1435.tif' 
+
+    if args.bd1500 == True:
+        array_out = algorithms.bd1500(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD1500.tif'
     
+    if args.icer1 == True:
+        array_out = algorithms.icer1(raster, wavelengths)
+        if args.outputname == None:
+            name = 'ICER1.tif' 
+            
+    if args.bd1750 == True:
+        array_out = algorithms.bd1750(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD1750.tif' 
+            
+    if args.bd1900 == True:
+        array_out = algorithms.bd1900(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD1900.tif' 
+
+    if args.bdi2000 == True:
+        array_out = algorithms.bdi2000(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BDI2000.tif'   
+            
+    if args.bdi2100 == True:
+        array_out = algorithms.bd2100(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD2100.tif'     
+
+    if args.bdi2210 == True:
+        array_out = algorithms.bd2210(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD2210.tif'       
+            
+    if args.bdi2290 == True:
+        array_out = algorithms.bd2290(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD2290.tif'   
+
+    if args.d2300 == True:
+        array_out = algorithms.d2300(raster, wavelengths)
+        if args.outputname == None:
+            name = 'D2300.tif'   
+
+    if args.sindex == True:
+        array_out = algorithms.sindex(raster, wavelengths)
+        if args.outputname == None:
+            name = 'SIndex.tif'    
+  
+    if args.icer2 == True:
+        array_out = algorithms.icer2(raster, wavelengths)
+        if args.outputname == None:
+            name = 'ICER2.tif'   
+            
+    if args.bdcarb == True:
+        array_out = algorithms.bdcarb(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BDCARB.tif' 
+            
+    if args.bd3000 == True:
+        array_out = algorithms.bd3000(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD3000.tif'     
+            
+    if args.bd3100 == True:
+        array_out = algorithms.bd3100(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD3100.tif'  
     
+    if args.bd3200 == True:
+        array_out = algorithms.bd3200(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD3200.tif'  
+            
+    if args.bd3400 == True:
+        array_out = algorithms.bd3400(raster, wavelengths)
+        if args.outputname == None:
+            name = 'BD3400.tif'  
+            
+    if args.cindex == True:
+        array_out = algorithms.cindex(raster, wavelengths)
+        if args.outputname == None:
+            name = 'CIndex.tif'        
+
     #Scale the data if necessary
     if args.scale ==True:
         scalemin = float(args.scalerange[0])
