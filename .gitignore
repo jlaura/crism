@@ -1,4 +1,4 @@
-*.py[cod]
+*.pyc
 
 # C extensions
 *.so
@@ -42,3 +42,4 @@ nosetests.xml
 *.tab
 *.fmt
 *.png
+*.xml
