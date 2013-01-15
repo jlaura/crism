@@ -134,6 +134,10 @@ def bd920(raster, wavelengths):
     return array_out
 
 def rpeak1(raster, wavelengths):
+    import numpy as np
+    import sys
+    import time
+    starttime = time.time()
     '''
     NAME: RPEAK1
     PARAMETER: reflectance peak 1
@@ -141,9 +145,59 @@ def rpeak1(raster, wavelengths):
       polynomial fit to R600, R648, R680, R710, R740, R770, R800, R830
     RATIONALE: Fe mineralogy
     '''
-    raise NotImplementedError
+    bands = csas.getbandnumbers(wavelengths, 442,533,600,710,740,775,800,833,860,893,925)
+    band442 = csas.getarray(raster.GetRasterBand(bands[0]+1))
+    band533 = csas.getarray(raster.GetRasterBand(bands[1]+1))
+    band600 = csas.getarray(raster.GetRasterBand(bands[2]+1))
+    band710 = csas.getarray(raster.GetRasterBand(bands[3]+1))
+    band740 = csas.getarray(raster.GetRasterBand(bands[4]+1))
+    band775 = csas.getarray(raster.GetRasterBand(bands[5]+1))
+    band800 = csas.getarray(raster.GetRasterBand(bands[6]+1))
+    band833 = csas.getarray(raster.GetRasterBand(bands[7]+1))
+    band860 = csas.getarray(raster.GetRasterBand(bands[8]+1))
+    band893 = csas.getarray(raster.GetRasterBand(bands[9]+1))
+    band925 = csas.getarray(raster.GetRasterBand(bands[10]+1))
+    
+    wavelength_index = np.array([442,533,600,710,740,775,800,833,860,893,925])
+    wavelength_vector = np.arange(len(wavelength_index), dtype=np.float64)
+    for index,band in enumerate(bands):
+        wavelength_vector[index] = wavelengths[band]
+    num_model_points = 1001
+    poly_degree = 4.0 #4th order polynomial fit
+    model_wv_vector = np.arange(num_model_points, dtype=np.float64) / (num_model_points - 1.0)*((wavelength_vector.max() - wavelength_vector.min())+wavelength_vector.min())
 
+    #Create a multi dimensional data cube from the selected bands 
+    rpeak_cube = np.dstack((band442,band533,band600,band710,band740,band775, band800, band833, band860, band893, band925))
+    
+    #Create output arrays.
+    rpeak_wavelength = np.ones(shape=(rpeak_cube.shape),dtype=np.float32)
+    rpeak_value = np.ones(shape=(rpeak_cube.shape),dtype=np.float32)
+    
+    #Now we need to iterate over each pixel in the band depth dimension (11)
+    for x in range(0,rpeak_cube.shape[1]):
+        sys.stdout.write("Processed column %i of %i \r" %(x,rpeak_cube.shape[1]))
+        sys.stdout.flush()
+        
+        for y in range(0,rpeak_cube.shape[0]):
+            spec_vec = rpeak_cube[x][y]
+            rpeak_params = np.polyfit(wavelength_vector,spec_vec,poly_degree)
+            #model_spec = np.polyval(model_wv_vector, rpeak_params)
+            model_spec = np.zeros(num_model_points)
+            for m in range(0,int(poly_degree)+1):
+                model_spec = model_spec + rpeak_params[m] * (model_wv_vector**float(m))
+            model_spec_max = model_spec.max()
+            model_spec_max_index = np.argmax(model_spec)            
+            model_spec_max_wv = model_wv_vector[model_spec_max_index]
+            rpeak_wavelength[x][y] = model_spec_max_wv
+            rpeak_value[x][y] = model_spec_max
+    array_out = rpeak_wavelength / 1000.0
+    stoptime = time.time()
+    print "Total time to perform Rpeak1 %f" %starttime - stoptime
+    return array_out
+    
 def bdi1000VIS(raster, wavelengths):
+    import numpy as np
+    from scipy.integrate import trapz
     '''
     NAME: BDI1000VIS
     PARAMETER: 1 micron integrated band depth; VIS wavelengths
@@ -151,7 +205,52 @@ def bdi1000VIS(raster, wavelengths):
       integrate over (1 -  normalized radiances)
     RATIONALE: crystalline Fe+2 or Fe+3 minerals
     '''
-    raise NotImplementedError
+    bands = csas.getbandnumbers(wavelengths, 833, 860, 892, 925, 951, 984, 1023)
+    band833= csas.getarray(raster.GetRasterBand(bands[0]+1))
+    band860 = csas.getarray(raster.GetRasterBand(bands[1]+1))
+    band892 = csas.getarray(raster.GetRasterBand(bands[2]+1))
+    band925 = csas.getarray(raster.GetRasterBand(bands[3]+1))
+    band951 = csas.getarray(raster.GetRasterBand(bands[4]+1))
+    band984 = csas.getarray(raster.GetRasterBand(bands[5]+1))
+    band1023 = csas.getarray(raster.GetRasterBand(bands[6]+1))
+    
+    wavelength_index = np.array([833, 860, 892, 925, 951, 984, 1023])
+    wavelength_vector = np.arange(len(wavelength_index), dtype=np.float64)
+    for index,band in enumerate(bands):
+        wavelength_vector[index] = wavelengths[band]    
+    
+    wavelength_vector_um = wavelength_vector / 1000.0
+    bdivis_value = np.zeros(shape=(band984.shape),dtype=np.float64)
+    bdi1000_cube = np.dstack((band883,band860,band892,band925,band951,band984,band1023))
+    rpeak_value_cube = np.zeros(shape=(band984.shape),dtype=np.float64)
+    print "Computing the rpeak value for each cell."
+    for x in range(0,rpeak_cube.shape[1]):
+            sys.stdout.write("Processed column %i of %i \r" %(x,rpeak_cube.shape[1]))
+            sys.stdout.flush()
+            for y in range(0,rpeak_cube.shape[0]):
+                spec_vec = rpeak_cube[x][y]
+                rpeak_params = np.polyfit(wavelength_vector,spec_vec,poly_degree)
+                #model_spec = np.polyval(model_wv_vector, rpeak_params)
+                model_spec = np.zeros(num_model_points)
+                for m in range(0,int(poly_degree)+1):
+                    model_spec = model_spec + rpeak_params[m] * (model_wv_vector**float(m))
+                model_spec_max = model_spec.max()
+                model_spec_max_index = np.argmax(model_spec)            
+                model_spec_max_wv = model_wv_vector[model_spec_max_index]
+                rpeak_wavelength[x][y] = model_spec_max_wv
+                rpeak_value_cube[x][y] = model_spec_max 
+    print "Finished computing rpeak values. Now computing Integrated Band Depth."
+    bdi1000_normalized_cube = bdi1000_cube / rpeak_value_cube
+    for x in range(0,rpeak_cube.shape[1]+1):
+                sys.stdout.write("Processed column %i of %i \r" %(x,rpeak_cube.shape[1]))
+                sys.stdout.flush()
+                for y in range(0,rpeak_cube.shape[0]+1):
+                    spec_vec = bdi1000_normalized_cube[x][y]  
+                    check_vec = bdi1000_cube[x][y]
+                    bdivis_value[x][y] = trapz(wavelength_vecor_um, 1.0-spec_vec)
+                    
+    return bdvis_value
+    #raise NotImplementedError
 
 def bdi1000IR(raster, wavelengths):
     '''
@@ -164,6 +263,7 @@ def bdi1000IR(raster, wavelengths):
      RATIONALE: crystalline Fe+2 minerals; corrected for overlying
        aerosol induced slope
     '''
+
     raise NotImplementedError
 
 def ira(raster, wavelengths):
