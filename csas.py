@@ -15,7 +15,7 @@ The S detector is the VNIR detector for TRR3 data products.  With the S detector
  The L detector is the IR detector for TRR3 data products.  With the L detector
   the following are supported:
   
-  ['BD11000IR', 'IRA', 'OLINDEX', 'LCPINDEX', 'HCPINDEX', 'VAR', 'ISLOPE1', 'BD1435', 'BD1500', 'ICER1', 'BD1750', 'BD1900', 'BDI2000', 'BD2100', 'BD2210', 'BD2290', 'D2300', 'SINDEX', 'ICER2', 'BDCARB','BD3000', 'BD3100', 'BD3200', 'BD3400', 'CINDEX', 'BD1270O2', 'BD1400H2O', 'BD2000CO2', 'BD2350', 'BD2600', 'IRR2', 'R2700', 'BD2700', 'IRR3']
+  ['BD11000IR', 'IRA', 'OLINDEX', 'LCPINDEX', 'HCPINDEX', 'VAR', 'ISLOPE1', 'BD1435', 'BD1500', 'ICER1', 'BD1750', 'BD1900', 'BDI2000', 'BD2100', 'BD2210', 'BD2290', 'Ds2300', 'SINDEX', 'ICER2', 'BDCARB','BD3000', 'BD3100', 'BD3200', 'BD3400', 'CINDEX', 'BD1270O2', 'BD1400H2O', 'BD2000CO2', 'BD2350', 'BD2600', 'IRR2', 'R2700', 'BD2700', 'IRR3']
 
 The J detector is unsupported currently.
 '''

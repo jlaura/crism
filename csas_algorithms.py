@@ -577,7 +577,7 @@ def d2300(raster, wavelengths):
     cr2170 = band1815 + slope * (wv2170 - wv1815)
     cr2210 = band1815 + slope * (wv2210 - wv1815)
     #Computation phase
-    array_out = 1.0 - (((band2290/cr2290)+(band2320/cr2320)+(band23330/cr2330))/((band2120/cr2120)+(band2170/cr2170)+(band2210/cr2210)))
+    array_out = 1.0 - (((band2290/cr2290)+(band2320/cr2320)+(band2330/cr2330))/((band2120/cr2120)+(band2170/cr2170)+(band2210/cr2210)))
     return array_out
 
 def sindex(raster, wavelengths):
