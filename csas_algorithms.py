@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 import csas
-
+from osgeo import gdal
 def rockdust1(raster, wavelengths):
     '''
     Name: R770
     Parameter: 0.77micron reflectance
     Formulation: R770
     Rationale: rock/dust
-    Band(s): 248
     '''
-    bands = csas.getbandnumbers(wavelengths, 770)    
+    bands = csas.getbandnumbers(wavelengths, 770)     
+    print raster, raster.GetRasterBand(247).ReadRaster(0,0,320,450,1,gdal.GDT_Float64)
     array770 = csas.getarray(raster.GetRasterBand(bands[0]+1))
     
     return array770
@@ -22,7 +22,6 @@ def rockdust2(raster, wavelengths):
     Parameter: Red/Blue Ratio
     Formulation: R770 / R440
     Rationale: rock/dust
-    Bands: 248, 196
     '''
     bands = csas.getbandnumbers(wavelengths, 440,770)  
     band440 = csas.getarray(raster.GetRasterBand(bands[0]+1))
@@ -37,8 +36,7 @@ def bd530(raster, wavelengths):
     NAME: BD530
     PARAMETER: 0.53 micron band depth
     FORMULATION *: 1 - (R530/(a*R709+b*R440))
-    RATIONALE: crystalline ferric minerals
-    Bands: 440, 530, 709
+    RATIONALE: Crystalline ferric minerals
     '''
     bands = csas.getbandnumbers(wavelengths, 440, 530, 709)
     band440 = csas.getarray(raster.GetRasterBand(bands[0]+1))
@@ -137,7 +135,8 @@ def rpeak1(raster, wavelengths):
     import numpy as np
     import sys
     import time
-    starttime = time.time()
+    import multiprocessing as mp
+    starttime = time.clock()
     '''
     NAME: RPEAK1
     PARAMETER: reflectance peak 1
@@ -170,8 +169,8 @@ def rpeak1(raster, wavelengths):
     rpeak_cube = np.dstack((band442,band533,band600,band710,band740,band775, band800, band833, band860, band893, band925))
     
     #Create output arrays.
-    rpeak_wavelength = np.ones(shape=(rpeak_cube.shape),dtype=np.float32)
-    rpeak_value = np.ones(shape=(rpeak_cube.shape),dtype=np.float32)
+    rpeak_wavelength = np.ones(shape=(band442.shape),dtype=np.float32)
+    rpeak_value = np.ones(shape=(band442.shape),dtype=np.float32)
     
     #Now we need to iterate over each pixel in the band depth dimension (11)
     for x in range(0,rpeak_cube.shape[1]):
@@ -179,7 +178,7 @@ def rpeak1(raster, wavelengths):
         sys.stdout.flush()
         
         for y in range(0,rpeak_cube.shape[0]):
-            spec_vec = rpeak_cube[x][y]
+            spec_vec = rpeak_cube[y][x]
             rpeak_params = np.polyfit(wavelength_vector,spec_vec,poly_degree)
             #model_spec = np.polyval(model_wv_vector, rpeak_params)
             model_spec = np.zeros(num_model_points)
@@ -188,16 +187,18 @@ def rpeak1(raster, wavelengths):
             model_spec_max = model_spec.max()
             model_spec_max_index = np.argmax(model_spec)            
             model_spec_max_wv = model_wv_vector[model_spec_max_index]
-            rpeak_wavelength[x][y] = model_spec_max_wv
-            rpeak_value[x][y] = model_spec_max
+            rpeak_wavelength[y][x] =  model_spec_max_wv
+            print rpeak_wavelength[y][x]
+            rpeak_value[y][x] = model_spec_max
     array_out = rpeak_wavelength / 1000.0
-    stoptime = time.time()
-    print "Total time to perform Rpeak1 %f" %starttime - stoptime
+    
+    stoptime = time.clock()
+    print "Total time to perform Rpeak1 %s" %(stoptime-starttime)
     return array_out
     
 def bdi1000VIS(raster, wavelengths):
     import numpy as np
-    from scipy.integrate import trapz
+    from scipy import integrate
     '''
     NAME: BDI1000VIS
     PARAMETER: 1 micron integrated band depth; VIS wavelengths
@@ -247,7 +248,7 @@ def bdi1000VIS(raster, wavelengths):
                 for y in range(0,rpeak_cube.shape[0]+1):
                     spec_vec = bdi1000_normalized_cube[x][y]  
                     check_vec = bdi1000_cube[x][y]
-                    bdivis_value[x][y] = trapz(wavelength_vecor_um, 1.0-spec_vec)
+                    bdivis_value[x][y] = scipy.integrate.newton_cotes(wavelength_vecor_um, (1.0-spec_vec))
                     
     return bdvis_value
     #raise NotImplementedError

@@ -4,11 +4,27 @@
 #TODO - Atmospheric parameters (http://pds.nasa.gov/ds-view/pds/viewProfile.jsp?dsid=MRO-M-CRISM-3-RDR-TARGETED-V1.0)
 #TODO - Get non-implemented coded
 
+'''
+CRISM dataset info:
+
+The S detector is the VNIR detector for TRR3 data products.  With the S detector
+ the following are supported:
+ 
+ ['R770', 'RBR', 'BD530', 'SH600', 'BD640', 'BD860', 'BD920', 'RPEAK1', 'BDI1000VIS','R440', 'IRR1']
+ 
+ The L detector is the IR detector for TRR3 data products.  With the L detector
+  the following are supported:
+  
+  ['BD11000IR', 'IRA', 'OLINDEX', 'LCPINDEX', 'HCPINDEX', 'VAR', 'ISLOPE1', 'BD1435', 'BD1500', 'ICER1', 'BD1750', 'BD1900', 'BDI2000', 'BD2100', 'BD2210', 'BD2290', 'D2300', 'SINDEX', 'ICER2', 'BDCARB','BD3000', 'BD3100', 'BD3200', 'BD3400', 'CINDEX', 'BD1270O2', 'BD1400H2O', 'BD2000CO2', 'BD2350', 'BD2600', 'IRR2', 'R2700', 'BD2700', 'IRR3']
+
+The J detector is unsupported currently.
+'''
 
 #Internal imports
 import sys
 import argparse
 import string
+import os
 
 #Module Imports
 import csas_algorithms as algorithms
@@ -113,19 +129,54 @@ def getbandnumbers(wavelengths, *args):
         bands.append(min(range(len(wavelengths)), key=lambda i: abs(wavelengths[i]-x)))
     return bands
 
-def wv2band(wvlength): 
+def get_wavelengths(newlbl,sw):
+        sensor_id = None ; slk = None
+        for line in newlbl:
+            if "MRO:SENSOR_ID" in line:
+                sensor_id =  line.split("\"")[1]
+            if "SPACECRAFT_CLOCK_START_COUNT" in line:
+                slk = int(line.split("\"")[1].split("/")[1].split(".")[0])
+                
+        #Select only those SW files that match the sensor    
+        sw = [cdr6 for cdr6 in sw if sensor_id in cdr6.split("_")[4]]
+        #Select only those SW files that are newest in version
+        maxversion = 0
+        for cdr6 in sw:
+            maxversion = int(cdr6.split("_")[5].split(".")[0])   
+        sw = [cdr6 for cdr6 in sw if str(maxversion) in cdr6.split("_")[5].split(".")[0]]
+        
+        #Select the newest CDR6 with a clock time <= image slk
+        wavelength_tab = []
+        for cdr6 in sw:
+            cdr6_slk = int(cdr6.split("_")[2])
+            if cdr6_slk < slk:
+                wavelength_tab.append(cdr6)
+        newlbl.close()
+        
+        wavelength_tab = wavelength_tab[-1] #Get the most recent version
+        return wv2band('SW/' + wavelength_tab, sensor_id),sensor_id
+    
+def wv2band(wvlength,sensor_id): 
     '''This function opens the wavelength tab file and parses the band
     lookups.  A list is returned where the wavelength index is equal to 
     the band number -1.  This is because python lists are 0 based and GDAL's
     band reading is 1 based.
     '''
     wv = open(wvlength)
-    wv2bnd = []
+    wv2bnd_list = []
     for line in wv:
         linelst = string.split(line, ',')
-        wv2bnd.append(float(linelst[2]))
-    wv.close
-    return wv2bnd
+        wv2bnd_list.append(float(linelst[1]))
+    wv.close()
+    if sensor_id == "L":
+        wv2bnd_list.reverse()
+        
+    wv2bnd_out = []
+    for x in wv2bnd_list:
+        if x != 65535.0:
+            wv2bnd_out.append(x)
+    print wv2bnd_list
+    return wv2bnd_list
 
 def metadata2band(metadata):
     #The metadata for each IMG contains a dict with the band mappings, we just need to parse it.
@@ -232,10 +283,14 @@ def main():
     args = parseargs()
     name = args.outputname
     
+    #Get a list of available CDR6 lookup tables
+    sw = os.listdir("SW")
+    sw = [x for x in sw if not ".LBL" in x.split("_")[5]]
+    
     if args.input_data.split('.')[1] == 'img':
         print "\nYou provided the .img file.  We will read from the .lbl file\n"
         args.input_data = args.input_data.split('.')[0] + '.lbl'
-    
+
     try:
         input_data = string.split(args.input_data, '.')
         input_data = input_data[0] + '.lbl'
@@ -249,25 +304,58 @@ def main():
         for line in open(input_data,'r'):
             #print line
             if "OBJECT          = FILE" in line:
-                line = "/* OBJECT = FILE */"
+                line = "/* OBJECT = FILE */\n"
 
                 print "\nA new GDAL readable .lbl file has been created with _fixed appended to the file name.  If you are running this multiple times on the same image, we are overwriting the label each time.\n"
+            if "LINES" in line:
+                lines = int(line.split("=")[1])
+            if "LINE_SAMPLES" in line:
+                samples = int(line.split("=")[1])
             newlbl.write(line)
         newlbl.close()
-
         dataset = GdalIO(input_data.split('.')[0] + '_fixed.lbl') #We have to read off disk because GDAL wants a string and newlbl is type file
         raster = dataset.load()
-        
+    print lines, samples
+    basename =  os.path.basename(input_data).split('.')[0]
+    dirname =  os.path.dirname(input_data)
+    hdr = open(dirname + '/' + basename +'.hdr', 'w')
+    hdr_out = ('''ENVI
+samples = {}
+lines   = {}
+bands   = 438
+header offset = 0
+file type = ENVI Standard
+data type = 4
+interleave = bil
+byte order = 0''').format(samples,lines)
+    hdr.write(hdr_out)
+    print "ENVI .hdr file created to allow GDAL to read the input image.\n"
+    hdr.close()
+    
+    dataset = GdalIO(dirname + '/' + basename +'.img') #We have to aim GDAL at the .img.
+    raster = dataset.load()
     xsize, ysize, bands, metadata = dataset.info(raster)
 
     #We are assuming that the NDV is homogeneous over the entire cube
     NDV = raster.GetRasterBand(1).GetNoDataValue()
+
+    try:
+        wavelengths,sensor_id = get_wavelengths(open(input_dataset, 'r'),sw)
+    except:
+        wavelengths,sensor_id = get_wavelengths(open(input_data.split('.')[0] + '_fixed.lbl','r'),sw)
     
-    #Generate a wavelength to band number lookup table via either the provided lookup or the image metadata.
-    if args.wavelength_tab == None:
-        #Attempt to parse the wv.tab file that is shipped with an MRDR
-        wavelength_lookup = args.input_data.replace('mrrif', 'mrrwv').split('.')
-        wavelengths = wv2band(wavelength_lookup[0]+'.tab')
+    #Check to make sure that the sensor supports the algorithm.
+    if sensor_id == 'S':
+        print "Input image uses the IR sensor.  Supported algorithms with this dataset are:"
+        print "['R770', 'RBR', 'BD530', 'SH600', 'BD640', 'BD860', 'BD920', 'RPEAK1', 'BDI1000VIS','R440', 'IRR1']"
+    
+    elif sensor_id =='L':
+        print "Input image uses the VNIR sensor.  Supported algorithms with this dataset are:"
+        print "['BD11000IR', 'IRA', 'OLINDEX', 'LCPINDEX', 'HCPINDEX', 'VAR', 'ISLOPE1', 'BD1435', 'BD1500', 'ICER1'," 
+        print " 'BD1750', 'BD1900', 'BDI2000', 'BD2100', 'BD2210', 'BD2290', 'D2300', 'SINDEX', 'ICER2', 'BDCARB',"
+        print " 'BD3000', 'BD3100', 'BD3200', 'BD3400', 'CINDEX', 'BD1270O2', 'BD1400H2O', 'BD2000CO2', 'BD2350', 'BD2600',"
+        print " 'IRR2', 'R2700', 'BD2700', 'IRR3']\n"
+        
     #Start parsing the args
     if args.rockdust1 == True:
         array_out = algorithms.rockdust1(raster, wavelengths)
@@ -472,10 +560,11 @@ def main():
     output = dataset.create_output(xsize, ysize, name, 1, parseddtype(dtype))    
     output.GetRasterBand(1).WriteArray(array_out)
     
-    if args.newNDV == None:
-        output.GetRasterBand(1).SetNoDataValue(NDV)
-    else:
-        output.GetRasterBand(1).SetNoDataValue(float(args.newNDV[0]))
+    if NDV or args.newNDV:
+        if args.newNDV == None:
+            output.GetRasterBand(1).SetNoDataValue(NDV)
+        else:
+            output.GetRasterBand(1).SetNoDataValue(float(args.newNDV[0]))
             
 if __name__ == '__main__':
     gdal.SetCacheMax(805306368) #768MB

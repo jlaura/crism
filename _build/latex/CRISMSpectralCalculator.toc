@@ -1,0 +1,44 @@
+\select@language {english}
+\contentsline {chapter}{\numberline {1}News}{3}{chapter.1}
+\contentsline {section}{\numberline {1.1}Installing CSAS}{3}{section.1.1}
+\contentsline {subsection}{\numberline {1.1.1}CSAS Dependencies}{3}{subsection.1.1.1}
+\contentsline {subsection}{\numberline {1.1.2}Installing}{3}{subsection.1.1.2}
+\contentsline {subsubsection}{OS X}{3}{subsubsection*.3}
+\contentsline {subsubsection}{Windows}{4}{subsubsection*.4}
+\contentsline {section}{\numberline {1.2}Algorithms}{4}{section.1.2}
+\contentsline {subsection}{\numberline {1.2.1}Surface}{5}{subsection.1.2.1}
+\contentsline {subsubsection}{Reflectance at 770\IeC {\textmu }m}{5}{subsubsection*.5}
+\contentsline {subsubsection}{Red / Blue Ratio}{5}{subsubsection*.6}
+\contentsline {subsubsection}{Band Depth at 530nm}{5}{subsubsection*.7}
+\contentsline {subsubsection}{Shoulder 600nm}{5}{subsubsection*.8}
+\contentsline {subsubsection}{Band Depth 640nm}{6}{subsubsection*.9}
+\contentsline {subsubsection}{Band Depth 860}{6}{subsubsection*.10}
+\contentsline {subsubsection}{Band Depth 920}{6}{subsubsection*.11}
+\contentsline {subsubsection}{RPeak 1}{6}{subsubsection*.12}
+\contentsline {subsubsection}{Integrated Band Depth 1\IeC {\textmu }m Visible}{7}{subsubsection*.13}
+\contentsline {subsubsection}{Integrated Band Depth 1000 IR}{7}{subsubsection*.14}
+\contentsline {subsubsection}{1.3\IeC {\textmu }m Reflectance (IR Albedo)}{7}{subsubsection*.15}
+\contentsline {subsubsection}{Olivine Index}{7}{subsubsection*.16}
+\contentsline {subsubsection}{Olivine Index 2}{8}{subsubsection*.17}
+\contentsline {subsubsection}{HCP Index}{8}{subsubsection*.18}
+\contentsline {subsubsection}{LCP Index}{8}{subsubsection*.19}
+\contentsline {subsubsection}{Spectral Variance}{8}{subsubsection*.20}
+\contentsline {subsubsection}{ISlope1}{8}{subsubsection*.21}
+\contentsline {subsubsection}{Band Depth 1435nm}{9}{subsubsection*.22}
+\contentsline {subsubsection}{Band Depth 1500mn}{9}{subsubsection*.23}
+\contentsline {subsubsection}{ICER1}{9}{subsubsection*.24}
+\contentsline {subsubsection}{Band Depth 1750}{9}{subsubsection*.25}
+\contentsline {subsubsection}{Band Depth 1900}{10}{subsubsection*.26}
+\contentsline {subsubsection}{Integrated Band Depth 2\IeC {\textmu }m}{10}{subsubsection*.27}
+\contentsline {subsubsection}{Band Depth 2100}{10}{subsubsection*.28}
+\contentsline {subsubsection}{Band Depth 2210}{10}{subsubsection*.29}
+\contentsline {subsubsection}{Band Depth 2290}{11}{subsubsection*.30}
+\contentsline {subsubsection}{2.3\IeC {\textmu }m Drop}{11}{subsubsection*.31}
+\contentsline {subsubsection}{SIndex}{11}{subsubsection*.32}
+\contentsline {subsubsection}{ICER2}{12}{subsubsection*.33}
+\contentsline {subsubsection}{BDCarb}{12}{subsubsection*.34}
+\contentsline {subsubsection}{BD3000}{12}{subsubsection*.35}
+\contentsline {subsubsection}{Band Depth 3100}{12}{subsubsection*.36}
+\contentsline {subsubsection}{Band Depth 3200}{13}{subsubsection*.37}
+\contentsline {subsubsection}{BD3400}{13}{subsubsection*.38}
+\contentsline {subsubsection}{CINDEX}{13}{subsubsection*.39}
