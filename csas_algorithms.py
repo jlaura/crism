@@ -552,7 +552,7 @@ def d2300(raster, wavelengths):
     '''
     bands = csas.getbandnumbers(wavelengths, 1815, 2120, 2170, 2210, 2290, 2320,2330, 2530 )
     band1815 = csas.getarray(raster.GetRasterBand(bands[0]+1))
-    band2110 = csas.getarray(raster.GetRasterBand(bands[1]+1))
+    band2120 = csas.getarray(raster.GetRasterBand(bands[1]+1))
     band2170 = csas.getarray(raster.GetRasterBand(bands[2]+1))
     band2210 = csas.getarray(raster.GetRasterBand(bands[3]+1))
     band2290 = csas.getarray(raster.GetRasterBand(bands[4]+1))
